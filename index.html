@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- ANNICK QB - VERSION 1.0.3 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK QB - VERSION 1.0.5 - if you can see this in Notepad, you have the right file -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNiIgZmlsbD0iIzFhMWQyNyIvPgogIDwhLS0gQm9keSBkb21lIC0tPgogIDxwYXRoIGQ9Ik02LDIwIFE2LDggMTYsOCBRMjYsOCAyNiwyMCBMMjYsMjYgUTI0LDI0IDIyLDI2IFEyMCwyNCAxOCwyNiBRMTYsMjQgMTQsMjYgUTEyLDI0IDEwLDI2IFE4LDI0IDYsMjYgWiIgZmlsbD0iI2ZmMDA4MCIvPgogIDwhLS0gRXllcyB3aGl0ZSAtLT4KICA8ZWxsaXBzZSBjeD0iMTIiIGN5PSIxOCIgcng9IjMiIHJ5PSI0IiBmaWxsPSJ3aGl0ZSIvPgogIDxlbGxpcHNlIGN4PSIyMCIgY3k9IjE4IiByeD0iMyIgcnk9IjQiIGZpbGw9IndoaXRlIi8+CiAgPCEtLSBQdXBpbHMgLS0+CiAgPGNpcmNsZSBjeD0iMTMiIGN5PSIxOCIgcj0iMS41IiBmaWxsPSIjMDA0NGZmIi8+CiAgPGNpcmNsZSBjeD0iMjEiIGN5PSIxOCIgcj0iMS41IiBmaWxsPSIjMDA0NGZmIi8+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Annick Bathrooms - Quote Builder v1.0.3</title>
+<title>QB</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -2442,7 +2442,7 @@ function exportPDF() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
-<!-- ANNICK QB - VERSION 1.0.3 - if you can see this in Notepad, you have the right file -->
+<!-- ANNICK QB - VERSION 1.0.5 - if you can see this in Notepad, you have the right file -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2990,10 +2990,28 @@ try { history.replaceState({ tab: 'designer' }, '', location.href); } catch(e) {
 
 // ── INSTALLATION SPEC ──
 
-const VERSION = 'v1.0.3';
+const VERSION = 'v1.0.5';
 // Wire version to header
 var _vEl = document.getElementById('qb-version');
 if (_vEl) _vEl.textContent = VERSION;
+
+// ── PUSH VERSION TO HELM SUPABASE ─────────────────────────────────────────
+(function() {
+  try {
+    var HELM_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
+    var HELM_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
+    fetch(HELM_URL + '/rest/v1/module_versions', {
+      method: 'POST',
+      headers: {
+        'apikey': HELM_KEY,
+        'Authorization': 'Bearer ' + HELM_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ module: 'blueprint', version: VERSION, updated_at: new Date().toISOString() })
+    }).catch(function(e) { console.warn('Version push failed:', e); });
+  } catch(e) { console.warn('Version push failed:', e); }
+})();
 
 const PACKAGE_NOTES = {
   arran:     'Arran',
