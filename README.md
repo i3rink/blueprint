@@ -1,4 +1,4 @@
-# blueprint (formerly qb)
+# blueprint (formerly QB)
 Annick blueprint
 Internal quote builder for Annick Bathrooms. Private repository.
 
