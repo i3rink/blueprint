@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.0.6 -->
+<!-- Blueprint (qb) v2.0.7 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -773,8 +773,9 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 <div class="page" id="page-home">
   <header class="home-header">
     <div class="home-logo">
-      📐 Blueprint <span>— Annick</span>
+      📐 Blueprint
       <small id="header-user-name"></small>
+      <small id="header-version" style="font-size:11px;color:var(--muted);font-weight:400;font-family:'Hanken Grotesk',sans-serif;"></small>
     </div>
     <div class="home-actions">
       <button class="btn btn-sm" onclick="loadJobs()">↺ Refresh</button>
@@ -1351,13 +1352,19 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
       <label class="form-label">Job ID</label>
       <input type="text" id="nj-job-id" class="form-input" placeholder="e.g. 2141">
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Customer ID</label>
+        <input type="text" id="nj-customer-id" class="form-input" placeholder="e.g. 26-1234">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Postcode</label>
+        <input type="text" id="nj-postcode" class="form-input" placeholder="e.g. KA9 1TN" oninput="normalisePostcode(this)">
+      </div>
+    </div>
     <div class="form-group">
       <label class="form-label">Customer Name</label>
       <input type="text" id="nj-customer-name" class="form-input" placeholder="Full name">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Postcode</label>
-      <input type="text" id="nj-postcode" class="form-input" placeholder="e.g. KA9 1TN" oninput="normalisePostcode(this)">
     </div>
     <div class="modal-btns">
       <button class="btn" onclick="closeNewJobModal()">Cancel</button>
@@ -1405,7 +1412,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.0.6';
+const APP_VERSION = 'v2.0.7';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -1719,6 +1726,7 @@ function closeNewJobModal() { g('newJobModal').classList.remove('open'); }
 
 async function createNewJob() {
   const jobId = g('nj-job-id').value.trim();
+  const customerId = g('nj-customer-id').value.trim();
   const customerName = g('nj-customer-name').value.trim();
   const postcode = normalisePostcodeValue(g('nj-postcode').value);
   const status = 'active';
@@ -1749,6 +1757,7 @@ async function createNewJob() {
   const now = new Date().toISOString();
   const body = {
     job_id: jobId,
+    customer_id: customerId || null,
     postcode: postcode || null,
     status,
     room_plans: [{ name: 'Main Bathroom', rooms: [], items: [], notes: [] }],
@@ -1928,8 +1937,10 @@ fetch(`${HELM_URL}/rest/v1/module_versions`, {
 
 // ── SET VERSION UI ──
 function setVersionUI() {
-  const el = g('versionFooter');
-  if (el) el.textContent = 'Blueprint ' + APP_VERSION;
+  const el = g('header-version');
+  if (el) el.textContent = APP_VERSION;
+  const footer = g('versionFooter');
+  if (footer) footer.style.display = 'none';
 }
 
 // ═══════════════════════════════════════════════
