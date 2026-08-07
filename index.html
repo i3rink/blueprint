@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.0.15 -->
+<!-- Blueprint (qb) v2.1.0 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -544,6 +544,298 @@ h1, h2, h3, .card-title { font-family: 'Bricolage Grotesque', sans-serif; }
   font-weight: 600;
   padding: 4px 10px;
 }
+
+/* ═══════════════════════════════════
+   QUOTE BUILDER
+═══════════════════════════════════ */
+
+/* Progress bar */
+.qb-progress {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  flex-shrink: 0;
+  overflow-x: auto;
+  position: relative;
+  z-index: 2;
+}
+.qb-step-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px 8px;
+  cursor: pointer;
+  min-width: 64px;
+  position: relative;
+  opacity: 0.45;
+  transition: opacity .15s;
+}
+.qb-step-dot::after {
+  content: '';
+  position: absolute;
+  top: 21px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+.qb-step-dot:last-child::after { display: none; }
+.qb-dot-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  position: relative;
+  z-index: 1;
+  transition: all .2s;
+}
+.qb-dot-label {
+  font-size: 9px;
+  color: var(--muted);
+  white-space: nowrap;
+  font-weight: 500;
+}
+.qb-step-dot.done { opacity: 1; cursor: pointer; }
+.qb-step-dot.done .qb-dot-circle {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+}
+.qb-step-dot.done::after { background: var(--teal); }
+.qb-step-dot.current { opacity: 1; cursor: default; }
+.qb-step-dot.current .qb-dot-circle {
+  background: var(--surface);
+  border-color: var(--teal);
+  color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(0,117,171,.15);
+}
+.qb-step-dot.current .qb-dot-label { color: var(--teal); font-weight: 600; }
+
+/* Nudge banner */
+.qb-nudge {
+  background: #fef3c7;
+  border-bottom: 1px solid #fde68a;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: #92400e;
+  position: relative;
+  z-index: 2;
+}
+.qb-nudge-icon { font-size: 16px; flex-shrink: 0; }
+.qb-nudge-dismiss {
+  background: none;
+  border: none;
+  color: #92400e;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: auto;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Body */
+.qb-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  position: relative;
+  z-index: 1;
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+}
+.qb-step { display: none; }
+.qb-step.active { display: block; }
+
+.qb-section-heading {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.qb-section-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+/* Package grid */
+.qb-pkg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.qb-pkg-tile {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, transform .12s;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.qb-pkg-tile:hover {
+  border-color: var(--teal-light);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+.qb-pkg-tile.selected {
+  border-color: var(--teal);
+  background: var(--teal-faint);
+  box-shadow: var(--shadow-lg);
+}
+.qb-pkg-tile.selected::before {
+  content: '✓';
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 20px;
+  height: 20px;
+  background: var(--teal);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qb-pkg-name {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.qb-pkg-type {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--teal);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 10px;
+}
+.qb-pkg-price {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--teal);
+  margin-bottom: 2px;
+}
+.qb-pkg-fitting {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.qb-pkg-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 4px;
+}
+.qb-pkg-colours {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+.qb-pkg-colour-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  flex-shrink: 0;
+  title: attr(data-colour);
+}
+
+/* Cloakroom toggle */
+.qb-cloak-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+.qb-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.qb-toggle-label input[type=checkbox] {
+  accent-color: var(--teal);
+  width: 15px;
+  height: 15px;
+}
+
+/* Running total footer */
+.qb-footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 -1px 0 rgba(0,0,0,.04);
+}
+.qb-footer-totals {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.qb-footer-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.qb-footer-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.qb-footer-value {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.qb-footer-total { color: var(--teal); font-size: 18px; }
+.qb-footer-nav { display: flex; gap: 8px; flex-shrink: 0; }
 
 /* ── BUTTONS ── */
 .btn {
@@ -1413,7 +1705,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div><!-- end page-installspec -->
 
 <!-- ═══════════════════════════════════
-     PAGE: QUOTE BUILDER (stub)
+     PAGE: QUOTE BUILDER
 ═══════════════════════════════════ -->
 <div class="page" id="page-quote">
   <header class="module-header">
@@ -1422,6 +1714,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
     <span class="module-title">Quote Builder</span>
     <div class="module-header-right">
       <span class="job-chip" id="quoteJobChip"></span>
+      <button class="btn btn-sm" onclick="QB.saveQuote()" id="qb-save-btn">💾 Save</button>
     </div>
   </header>
   <!-- Module nav -->
@@ -1431,12 +1724,119 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
     <span class="module-nav-tab" data-action="switch-module" data-module="installspec">🔧 Install Spec</span>
     <span class="module-nav-tab active" data-action="switch-module" data-module="quote">💷 Quote</span>
   </nav>
-  <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:40px;text-align:center;position:relative;z-index:1;">
-    <div style="font-size:48px;">💷</div>
-    <h2 style="font-family:'Bricolage Grotesque',sans-serif;">Quote Builder</h2>
-    <p style="color:var(--muted);max-width:400px;line-height:1.6;">The full product configurator and quote generation will live here. Coming once the catalogue data is confirmed with Scott.</p>
+
+  <!-- QB Progress bar -->
+  <div class="qb-progress" id="qb-progress">
+    <div class="qb-step-dot current" data-step="1" onclick="QB.goToStep(1)">
+      <div class="qb-dot-circle">1</div>
+      <div class="qb-dot-label">Package</div>
+    </div>
+    <div class="qb-step-dot" data-step="2" onclick="QB.goToStep(2)">
+      <div class="qb-dot-circle">2</div>
+      <div class="qb-dot-label">Wet Area</div>
+    </div>
+    <div class="qb-step-dot" data-step="3" onclick="QB.goToStep(3)">
+      <div class="qb-dot-circle">3</div>
+      <div class="qb-dot-label">Glassware</div>
+    </div>
+    <div class="qb-step-dot" data-step="4" onclick="QB.goToStep(4)">
+      <div class="qb-dot-circle">4</div>
+      <div class="qb-dot-label">Furniture</div>
+    </div>
+    <div class="qb-step-dot" data-step="5" onclick="QB.goToStep(5)">
+      <div class="qb-dot-circle">5</div>
+      <div class="qb-dot-label">Brassware</div>
+    </div>
+    <div class="qb-step-dot" data-step="6" onclick="QB.goToStep(6)">
+      <div class="qb-dot-circle">6</div>
+      <div class="qb-dot-label">Panels</div>
+    </div>
+    <div class="qb-step-dot" data-step="7" onclick="QB.goToStep(7)">
+      <div class="qb-dot-circle">7</div>
+      <div class="qb-dot-label">Kits</div>
+    </div>
+    <div class="qb-step-dot" data-step="8" onclick="QB.goToStep(8)">
+      <div class="qb-dot-circle">8</div>
+      <div class="qb-dot-label">Delivery</div>
+    </div>
+    <div class="qb-step-dot" data-step="9" onclick="QB.goToStep(9)">
+      <div class="qb-dot-circle">9</div>
+      <div class="qb-dot-label">Summary</div>
+    </div>
   </div>
-</div>
+
+  <!-- Package nudge banner -->
+  <div class="qb-nudge" id="qb-nudge" style="display:none">
+    <span class="qb-nudge-icon">💡</span>
+    <span id="qb-nudge-text"></span>
+    <button class="btn btn-sm" id="qb-nudge-switch" onclick="QB.acceptNudge()">Switch package</button>
+    <button class="qb-nudge-dismiss" onclick="QB.dismissNudge()">✕</button>
+  </div>
+
+  <!-- QB Scrollable body -->
+  <div class="qb-body" id="qb-body">
+
+    <!-- ── STEP 1: Package ── -->
+    <div class="qb-step active" id="qb-step-1">
+      <div class="qb-section-heading">Choose a package</div>
+      <p class="qb-section-sub">This sets the baseline price and determines what's included throughout the rest of the quote.</p>
+
+      <div class="qb-pkg-grid" id="qb-pkg-grid">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Cloakroom toggle -->
+      <div class="qb-cloak-toggle">
+        <label class="qb-toggle-label">
+          <input type="checkbox" id="qb-cloak-check" onchange="QB.toggleCloakroom()">
+          Cloakroom / WC only
+        </label>
+        <span style="font-size:12px;color:var(--muted);">Shows cloakroom variants of each package</span>
+      </div>
+    </div>
+
+    <!-- Steps 2–9 rendered here as build progresses -->
+    <div class="qb-step" id="qb-step-2">
+      <div class="qb-section-heading">Wet Area</div>
+      <p class="qb-section-sub" style="color:var(--muted);">Coming next session.</p>
+    </div>
+    <div class="qb-step" id="qb-step-3"><div class="qb-section-heading">Glassware</div></div>
+    <div class="qb-step" id="qb-step-4"><div class="qb-section-heading">Furniture</div></div>
+    <div class="qb-step" id="qb-step-5"><div class="qb-section-heading">Brassware</div></div>
+    <div class="qb-step" id="qb-step-6"><div class="qb-section-heading">Panels &amp; Flooring</div></div>
+    <div class="qb-step" id="qb-step-7"><div class="qb-section-heading">Install Kits</div></div>
+    <div class="qb-step" id="qb-step-8"><div class="qb-section-heading">Delivery</div></div>
+    <div class="qb-step" id="qb-step-9"><div class="qb-section-heading">Summary</div></div>
+
+  </div><!-- end qb-body -->
+
+  <!-- Running total footer -->
+  <div class="qb-footer">
+    <div class="qb-footer-totals">
+      <div class="qb-footer-item">
+        <span class="qb-footer-label">Package</span>
+        <span class="qb-footer-value" id="qbf-package">—</span>
+      </div>
+      <div class="qb-footer-item">
+        <span class="qb-footer-label">Upgrades</span>
+        <span class="qb-footer-value" id="qbf-upgrades">£0</span>
+      </div>
+      <div class="qb-footer-item">
+        <span class="qb-footer-label">Extras</span>
+        <span class="qb-footer-value" id="qbf-extras">£0</span>
+      </div>
+      <div class="qb-footer-item">
+        <span class="qb-footer-label">Total</span>
+        <span class="qb-footer-value qb-footer-total" id="qbf-total">—</span>
+      </div>
+    </div>
+    <div class="qb-footer-nav">
+      <button class="btn" id="qb-btn-back" onclick="QB.prevStep()" style="display:none">← Back</button>
+      <button class="btn btn-primary" id="qb-btn-next" onclick="QB.nextStep()">Next →</button>
+    </div>
+  </div>
+
+</div><!-- end page-quote -->
 
 <!-- ═══════════════════════════════════
      MODAL: NEW JOB
@@ -1533,7 +1933,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.0.15';
+const APP_VERSION = 'v2.1.0';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -2901,6 +3301,385 @@ function exportPNG(){
 }
 
 // ── INIT ──
+// ═══════════════════════════════════════════════
+// QUOTE BUILDER MODULE
+// ═══════════════════════════════════════════════
+const QB = (function() {
+'use strict';
+
+// ── Talli Supabase (read-only price lookups) ──
+const TALLI_URL = 'https://jlqonolsenwyipgqmfr.supabase.co';
+const TALLI_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6ImpscW9ub2xzZW53eWlwZ3FnbWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NzE1NTgsImV4cCI6MjA5NjI0NzU1OH0.dJC8G4UO9o2-oS42Hdb9GCGn_1RsoXB1fsrVODShoo0';
+
+async function talliGet(path, qs = '') {
+  const res = await fetch(`${TALLI_URL}/rest/v1/${path}?${qs}`, {
+    headers: {
+      'apikey': TALLI_KEY,
+      'Authorization': `Bearer ${TALLI_KEY}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!res.ok) throw new Error(`Talli error ${res.status}`);
+  return res.json();
+}
+
+// ── Package definitions ──
+const PACKAGES = [
+  {
+    id: 'arran', code: 'AR', name: 'Arran', type: 'bathroom',
+    price: 1749, fitting: 1150,
+    desc: 'Entry level. 250mm PVC panels, white gloss furniture, chrome brassware.',
+    colours: ['white'], finishes: ['chrome'],
+    colourDots: ['#ffffff'],
+    nudgeAt: 2349, nudgeTo: 'bute',
+  },
+  {
+    id: 'bute', code: 'BU', name: 'Bute', type: 'bathroom',
+    price: 2349, fitting: 1150,
+    desc: 'Square-edge bath or stone tray. White or Soft Black furniture. Chrome or Matt Black brassware.',
+    colours: ['white', 'soft-black'], finishes: ['chrome', 'matt-black'],
+    colourDots: ['#ffffff', '#2d2d2d'],
+    nudgeAt: 2699, nudgeTo: 'mull',
+  },
+  {
+    id: 'mull', code: 'MU', name: 'Mull', type: 'bathroom',
+    price: 2699, fitting: 1300,
+    desc: '1000mm slimline furniture. White, Midnight Blue, Green, Soft Black. Chrome, Brushed Brass or Matt Black.',
+    colours: ['white', 'midnight-blue', 'green', 'soft-black'], finishes: ['chrome', 'brushed-brass', 'matt-black'],
+    colourDots: ['#ffffff', '#1e3a5f', '#2d6a4f', '#2d2d2d'],
+    nudgeAt: 3599, nudgeTo: 'cumbrae',
+  },
+  {
+    id: 'cumbrae', code: 'CU', name: 'Cumbrae', type: 'bathroom',
+    price: 3599, fitting: 1250,
+    desc: 'Assisted living. Grab rails and fold-away seat included. Full colour range.',
+    colours: ['white', 'midnight-blue', 'green', 'grey', 'soft-black'], finishes: ['chrome', 'brushed-brass', 'matt-black'],
+    colourDots: ['#ffffff', '#1e3a5f', '#2d6a4f', '#9ca3af', '#2d2d2d'],
+    nudgeAt: 4399, nudgeTo: 'skye',
+  },
+  {
+    id: 'skye', code: 'SK', name: 'Skye', type: 'bathroom',
+    price: 4399, fitting: 1600,
+    desc: 'Build Your Own. Full range available — any colour, any finish.',
+    colours: ['white', 'midnight-blue', 'green', 'grey', 'soft-black', 'cashmere'], finishes: ['chrome', 'brushed-brass', 'brushed-bronze', 'gunmetal', 'nickel', 'matt-black'],
+    colourDots: ['#ffffff', '#1e3a5f', '#2d6a4f', '#9ca3af', '#2d2d2d', '#c8b99a'],
+    nudgeAt: 5399, nudgeTo: 'skye-plus',
+  },
+  {
+    id: 'skye-plus', code: 'SK', name: 'Skye Plus', type: 'bathroom',
+    price: 5399, fitting: 1600,
+    desc: 'Premium Build Your Own. Two niche inserts included. Perform Panels included.',
+    colours: ['white', 'midnight-blue', 'green', 'grey', 'soft-black', 'cashmere'], finishes: ['chrome', 'brushed-brass', 'brushed-bronze', 'gunmetal', 'nickel', 'matt-black'],
+    colourDots: ['#ffffff', '#1e3a5f', '#2d6a4f', '#9ca3af', '#2d2d2d', '#c8b99a'],
+    nudgeAt: null, nudgeTo: null,
+  },
+  // Cloakroom variants
+  {
+    id: 'arran-cl', code: 'AR', name: 'Arran Cloakroom', type: 'cloakroom',
+    price: 1299, fitting: 650,
+    desc: 'Entry level cloakroom. White gloss, chrome brassware, 250mm PVC.',
+    colours: ['white'], finishes: ['chrome'],
+    colourDots: ['#ffffff'],
+    nudgeAt: 1999, nudgeTo: 'mull-cl',
+  },
+  {
+    id: 'mull-cl', code: 'MU', name: 'Mull Cloakroom', type: 'cloakroom',
+    price: 1999, fitting: 650,
+    desc: 'Slimline cloakroom. Four furniture colours, three brassware finishes.',
+    colours: ['white', 'midnight-blue', 'green', 'soft-black'], finishes: ['chrome', 'brushed-brass', 'matt-black'],
+    colourDots: ['#ffffff', '#1e3a5f', '#2d6a4f', '#2d2d2d'],
+    nudgeAt: 2499, nudgeTo: 'skye-cl',
+  },
+  {
+    id: 'skye-cl', code: 'SK', name: 'Skye Cloakroom', type: 'cloakroom',
+    price: 2499, fitting: 650,
+    desc: 'Premium cloakroom. Full selection available.',
+    colours: ['white', 'midnight-blue', 'green', 'grey', 'soft-black', 'cashmere'], finishes: ['chrome', 'brushed-brass', 'brushed-bronze', 'gunmetal', 'nickel', 'matt-black'],
+    colourDots: ['#ffffff', '#1e3a5f', '#2d6a4f', '#9ca3af', '#2d2d2d', '#c8b99a'],
+    nudgeAt: null, nudgeTo: null,
+  },
+];
+
+// ── QB state ──
+let qbState = {
+  step: 1,
+  pkg: null,          // selected package object
+  cloakroom: false,   // showing cloakroom variants
+  upgrades: {},       // section → { sku, name, cost, upgradeAmount }
+  extras: {},         // sku → { name, cost }
+  nudgeDismissed: false,
+  nudgeSuggestedPkg: null,
+};
+
+const COLOUR_LABELS = {
+  'white': 'White Gloss', 'soft-black': 'Soft Black', 'midnight-blue': 'Midnight Blue',
+  'green': 'Green Satin', 'grey': 'Grey Satin', 'cashmere': 'Cashmere',
+};
+
+// ── Helpers ──
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return '£' + Number(n).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function totalUpgrades() {
+  return Object.values(qbState.upgrades).reduce((s, u) => s + (u.upgradeAmount || 0), 0);
+}
+
+function totalExtras() {
+  return Object.values(qbState.extras).reduce((s, e) => s + (e.cost || 0), 0);
+}
+
+function grandTotal() {
+  if (!qbState.pkg) return null;
+  return qbState.pkg.price + totalUpgrades() + totalExtras();
+}
+
+// ── Footer totals ──
+function updateFooter() {
+  const pkg = qbState.pkg;
+  const el = id => document.getElementById(id);
+  el('qbf-package').textContent  = pkg ? `${pkg.name} — ${fmt(pkg.price)}` : '—';
+  el('qbf-upgrades').textContent = fmt(totalUpgrades());
+  el('qbf-extras').textContent   = fmt(totalExtras());
+  el('qbf-total').textContent    = grandTotal() !== null ? fmt(grandTotal()) : '—';
+}
+
+// ── Nudge logic ──
+function checkNudge() {
+  if (!qbState.pkg || qbState.nudgeDismissed) return;
+  const total = grandTotal();
+  const { nudgeAt, nudgeTo } = qbState.pkg;
+  if (!nudgeAt || !nudgeTo || total === null) { hideNudge(); return; }
+  if (total >= nudgeAt) {
+    const nextPkg = PACKAGES.find(p => p.id === nudgeTo);
+    if (!nextPkg) { hideNudge(); return; }
+    const saving = total - nextPkg.price;
+    const nudgeEl = document.getElementById('qb-nudge');
+    const textEl  = document.getElementById('qb-nudge-text');
+    const btnEl   = document.getElementById('qb-nudge-switch');
+    if (nudgeEl && textEl && btnEl) {
+      textEl.textContent = `Based on selections, this quote is now in ${nextPkg.name} territory (${fmt(nextPkg.price)}). Switching would ${saving > 0 ? `save £${saving.toLocaleString('en-GB')} and include` : 'include'} more as standard.`;
+      btnEl.textContent = `Switch to ${nextPkg.name}`;
+      qbState.nudgeSuggestedPkg = nudgeTo;
+      nudgeEl.style.display = 'flex';
+    }
+  } else {
+    hideNudge();
+  }
+}
+
+function hideNudge() {
+  const el = document.getElementById('qb-nudge');
+  if (el) el.style.display = 'none';
+}
+
+function dismissNudge() {
+  qbState.nudgeDismissed = true;
+  hideNudge();
+}
+
+function acceptNudge() {
+  if (!qbState.nudgeSuggestedPkg) return;
+  const pkg = PACKAGES.find(p => p.id === qbState.nudgeSuggestedPkg);
+  if (pkg) selectPackage(pkg.id);
+  hideNudge();
+}
+
+// ── Package rendering ──
+function renderPackages() {
+  const grid = document.getElementById('qb-pkg-grid');
+  if (!grid) return;
+  const visible = PACKAGES.filter(p =>
+    qbState.cloakroom ? p.type === 'cloakroom' : p.type === 'bathroom'
+  );
+  grid.innerHTML = visible.map(p => {
+    const sel = qbState.pkg && qbState.pkg.id === p.id ? 'selected' : '';
+    const dots = p.colourDots.map((c, i) => {
+      const label = p.colours[i] ? COLOUR_LABELS[p.colours[i]] || p.colours[i] : '';
+      const border = c === '#ffffff' ? 'border:1.5px solid #cbd5e1;' : '';
+      return `<div class="qb-pkg-colour-dot" style="background:${c};${border}" title="${label}"></div>`;
+    }).join('');
+    return `<div class="qb-pkg-tile ${sel}" data-action="qb-select-pkg" data-pkg="${p.id}">
+      <div class="qb-pkg-name">${esc(p.name)}</div>
+      <div class="qb-pkg-type">${p.type === 'cloakroom' ? 'Cloakroom' : 'Full Bathroom'}</div>
+      <div class="qb-pkg-price">${fmt(p.price)}</div>
+      <div class="qb-pkg-fitting">Fitting: ${fmt(p.fitting)}</div>
+      <div class="qb-pkg-desc">${esc(p.desc)}</div>
+      <div class="qb-pkg-colours">${dots}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectPackage(pkgId) {
+  qbState.pkg = PACKAGES.find(p => p.id === pkgId) || null;
+  qbState.nudgeDismissed = false;
+  qbState.nudgeSuggestedPkg = null;
+  renderPackages();
+  updateFooter();
+  checkNudge();
+}
+
+function toggleCloakroom() {
+  qbState.cloakroom = document.getElementById('qb-cloak-check').checked;
+  qbState.pkg = null;
+  qbState.nudgeDismissed = false;
+  hideNudge();
+  renderPackages();
+  updateFooter();
+}
+
+// ── Step navigation ──
+function goToStep(n) {
+  // Only allow jumping to completed steps or current step
+  if (n > qbState.step) return;
+  qbState.step = n;
+  renderStep();
+}
+
+function nextStep() {
+  if (qbState.step === 1 && !qbState.pkg) {
+    toast('Choose a package to continue', 'warn');
+    return;
+  }
+  if (qbState.step < 9) {
+    qbState.step++;
+    renderStep();
+  }
+}
+
+function prevStep() {
+  if (qbState.step > 1) {
+    qbState.step--;
+    renderStep();
+  }
+}
+
+function renderStep() {
+  // Hide all steps
+  document.querySelectorAll('.qb-step').forEach(s => s.classList.remove('active'));
+  const active = document.getElementById('qb-step-' + qbState.step);
+  if (active) active.classList.add('active');
+
+  // Update progress dots
+  document.querySelectorAll('.qb-step-dot').forEach(d => {
+    const n = parseInt(d.dataset.step);
+    d.classList.remove('done', 'current');
+    if (n < qbState.step) d.classList.add('done');
+    else if (n === qbState.step) d.classList.add('current');
+  });
+
+  // Back button
+  const backBtn = document.getElementById('qb-btn-back');
+  if (backBtn) backBtn.style.display = qbState.step > 1 ? '' : 'none';
+
+  // Next button label
+  const nextBtn = document.getElementById('qb-btn-next');
+  if (nextBtn) nextBtn.textContent = qbState.step === 9 ? 'Generate Quote' : 'Next →';
+
+  // Scroll body to top
+  const body = document.getElementById('qb-body');
+  if (body) body.scrollTop = 0;
+}
+
+// ── Save / Load ──
+function getQuoteData() {
+  return {
+    pkg_id: qbState.pkg ? qbState.pkg.id : null,
+    pkg_name: qbState.pkg ? qbState.pkg.name : null,
+    pkg_price: qbState.pkg ? qbState.pkg.price : null,
+    pkg_fitting: qbState.pkg ? qbState.pkg.fitting : null,
+    cloakroom: qbState.cloakroom,
+    upgrades: qbState.upgrades,
+    extras: qbState.extras,
+    step: qbState.step,
+  };
+}
+
+async function saveQuote() {
+  if (!state.activeJob) { toast('No active job', 'warn'); return; }
+  if (state.activeJob.id === 'test') { toast('Test mode — save skipped', 'warn'); return; }
+  try {
+    const updated = await sbPatch('blueprint_jobs', `id=eq.${state.activeJob.id}`, {
+      quote: getQuoteData(),
+      updated_at: new Date().toISOString(),
+    });
+    const r = Array.isArray(updated) ? updated[0] : updated;
+    if (r) state.activeJob = { ...state.activeJob, ...r };
+    toast('Quote saved', 'success');
+  } catch(e) {
+    toast('Save failed: ' + (e.message || 'error'), 'error');
+  }
+}
+
+function loadQuoteData(data) {
+  if (!data) return;
+  qbState.cloakroom = data.cloakroom || false;
+  const clkEl = document.getElementById('qb-cloak-check');
+  if (clkEl) clkEl.checked = qbState.cloakroom;
+  if (data.pkg_id) {
+    qbState.pkg = PACKAGES.find(p => p.id === data.pkg_id) || null;
+  }
+  qbState.upgrades = data.upgrades || {};
+  qbState.extras   = data.extras   || {};
+  qbState.step     = data.step     || 1;
+  renderPackages();
+  renderStep();
+  updateFooter();
+}
+
+// ── Delegated click handler for package tiles ──
+document.addEventListener('click', e => {
+  const tile = e.target.closest('[data-action="qb-select-pkg"]');
+  if (tile) selectPackage(tile.dataset.pkg);
+});
+
+// ── Public API ──
+return {
+  init() {
+    renderPackages();
+    renderStep();
+    updateFooter();
+  },
+  nextStep,
+  prevStep,
+  goToStep,
+  toggleCloakroom,
+  dismissNudge,
+  acceptNudge,
+  saveQuote,
+  loadQuoteData,
+  getQuoteData,
+  checkNudge,
+  updateFooter,
+  talliGet,
+};
+})();
+
+// ── Wire QB into existing save/load ──
+// Extend saveCurrentModule to include quote
+const _origSave = saveCurrentModule;
+saveCurrentModule = async function() {
+  if (state.currentPage === 'quote') {
+    if (!state.activeJob) { toast('No active job', 'warn'); return; }
+    if (state.activeJob.id === 'test') { toast('Test mode — save skipped', 'warn'); return; }
+    await QB.saveQuote();
+    return;
+  }
+  return _origSave.apply(this, arguments);
+};
+
+// Extend loadJobDataIntoModules to include quote
+const _origLoad = loadJobDataIntoModules;
+loadJobDataIntoModules = function() {
+  _origLoad.apply(this, arguments);
+  if (state.activeJob && state.activeJob.quote) {
+    QB.loadQuoteData(state.activeJob.quote);
+  } else {
+    QB.init();
+  }
+};
+
 function init() {
   setVersionUI();
   buildCheckList('required-works-list', REQUIRED_WORKS, selectedRequired, null, 'req-count', 'req-uplift');
@@ -2911,6 +3690,7 @@ function init() {
   g('tool-room').classList.add('active');
   syncPlannerFromRoom();
   updateRoomTabs();
+  QB.init();
   checkAuth();
 }
 
