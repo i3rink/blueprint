@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.0.14 -->
+<!-- Blueprint (qb) v2.0.15 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -303,6 +303,30 @@ h1, h2, h3, .card-title { font-family: 'Bricolage Grotesque', sans-serif; }
 }
 .module-nav-tab:hover { color: var(--teal); }
 .module-nav-tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+/* ── Focus mode (planner) ── */
+#page-planner.focus-mode .module-header { display: none; }
+#page-planner.focus-mode .module-nav    { display: none; }
+#page-planner.focus-mode .room-switcher { padding-top: 6px; }
+.focus-exit-btn {
+  display: none;
+  position: fixed;
+  top: 8px;
+  right: 12px;
+  z-index: 9999;
+  background: rgba(15,23,42,.72);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+.focus-exit-btn:hover { background: rgba(15,23,42,.92); }
+#page-planner.focus-mode .focus-exit-btn { display: block; }
 
 /* Doubler modal */
 .doubler-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
@@ -889,7 +913,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 
   <header class="module-header">
     <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
-    <span class="module-breadcrumb" onclick="showPage('home')">Blueprint</span>
+    <span class="module-breadcrumb" onclick="exitFocusMode();showPage('home')">Blueprint</span>
     <span class="module-breadcrumb-sep">/</span>
     <span class="module-title">Planner</span>
     <div class="module-header-right">
@@ -901,8 +925,10 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
       <button class="planner-btn" onclick="exportPNG()">🖼 Export to PNG</button>
       <button class="planner-btn primary" onclick="exportPDF()">📄 Export to PDF</button>
       <button class="planner-btn primary" onclick="saveCurrentModule()">💾 Save</button>
+      <button class="planner-btn" onclick="toggleFocusMode()" id="focusToggleBtn">⛶ Focus</button>
     </div>
   </header>
+  <button class="focus-exit-btn" onclick="toggleFocusMode()">✕ Exit Focus</button>
 
   <!-- Module nav -->
   <nav class="module-nav">
@@ -1507,7 +1533,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.0.14';
+const APP_VERSION = 'v2.0.15';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -1630,6 +1656,8 @@ function openModule(name) {
 async function switchModule(name) {
   if (!state.activeJob) { toast('No active job', 'warn'); return; }
   if (name === state.currentPage) return;
+  // Exit focus mode when leaving planner
+  if (state.currentPage === 'planner') exitFocusMode();
   // Auto-save current module before switching
   try {
     await saveCurrentModule();
@@ -1638,6 +1666,22 @@ async function switchModule(name) {
   }
   loadJobDataIntoModules();
   showPage(name);
+}
+
+// ── FOCUS MODE ──
+function toggleFocusMode() {
+  const page = g('page-planner');
+  const btn  = g('focusToggleBtn');
+  const inFocus = page.classList.toggle('focus-mode');
+  if (btn) btn.textContent = inFocus ? '⛶ Exit Focus' : '⛶ Focus';
+  if (inFocus) setTimeout(render, 50);
+}
+
+function exitFocusMode() {
+  const page = g('page-planner');
+  const btn  = g('focusToggleBtn');
+  page.classList.remove('focus-mode');
+  if (btn) btn.textContent = '⛶ Focus';
 }
 
 // Delegated handler for module nav tabs
