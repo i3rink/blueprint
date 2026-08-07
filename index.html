@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.0.0 -->
+<!-- Blueprint (qb) v2.0.1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1282,7 +1282,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.0.0';
+const APP_VERSION = 'v2.0.1';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -1395,6 +1395,11 @@ function checkAuth() {
       return;
     }
   } catch(e) {}
+  // Running inside Helm iframe — skip splash, proceed to home
+  if (window !== window.parent) {
+    showPage('home');
+    return;
+  }
   showPage('auth');
 }
 
