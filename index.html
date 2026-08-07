@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.0.13 -->
+<!-- Blueprint (qb) v2.0.14 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -276,6 +276,33 @@ h1, h2, h3, .card-title { font-family: 'Bricolage Grotesque', sans-serif; }
 .search-result-customer { font-size: 13px; font-weight: 600; flex: 1; }
 .search-result-date { font-size: 11px; color: var(--muted); white-space: nowrap; }
 .search-hint { font-size: 13px; color: var(--muted); text-align: center; padding: 24px 0; }
+
+/* ── Module nav bar ── */
+.module-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 9;
+}
+.module-nav-tab {
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+  white-space: nowrap;
+  user-select: none;
+}
+.module-nav-tab:hover { color: var(--teal); }
+.module-nav-tab.active { color: var(--teal); border-bottom-color: var(--teal); }
 
 /* Doubler modal */
 .doubler-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
@@ -877,6 +904,14 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
     </div>
   </header>
 
+  <!-- Module nav -->
+  <nav class="module-nav">
+    <span class="module-nav-tab active" data-action="switch-module" data-module="planner">🛁 Planner</span>
+    <span class="module-nav-tab" data-action="switch-module" data-module="presurvey">📋 Pre-Survey</span>
+    <span class="module-nav-tab" data-action="switch-module" data-module="installspec">🔧 Install Spec</span>
+    <span class="module-nav-tab" data-action="switch-module" data-module="quote">💷 Quote</span>
+  </nav>
+
   <!-- Room switcher -->
   <div class="room-switcher" id="roomSwitcher">
     <span class="room-switcher-label">Room</span>
@@ -1087,6 +1122,13 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
       <button class="btn btn-primary btn-sm" onclick="saveCurrentModule()">💾 Save</button>
     </div>
   </header>
+  <!-- Module nav -->
+  <nav class="module-nav">
+    <span class="module-nav-tab" data-action="switch-module" data-module="planner">🛁 Planner</span>
+    <span class="module-nav-tab active" data-action="switch-module" data-module="presurvey">📋 Pre-Survey</span>
+    <span class="module-nav-tab" data-action="switch-module" data-module="installspec">🔧 Install Spec</span>
+    <span class="module-nav-tab" data-action="switch-module" data-module="quote">💷 Quote</span>
+  </nav>
   <div class="spec-wrap">
 
     <div class="spec-section">
@@ -1225,6 +1267,13 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
       <button class="btn btn-primary btn-sm" onclick="saveCurrentModule()">💾 Save</button>
     </div>
   </header>
+  <!-- Module nav -->
+  <nav class="module-nav">
+    <span class="module-nav-tab" data-action="switch-module" data-module="planner">🛁 Planner</span>
+    <span class="module-nav-tab" data-action="switch-module" data-module="presurvey">📋 Pre-Survey</span>
+    <span class="module-nav-tab active" data-action="switch-module" data-module="installspec">🔧 Install Spec</span>
+    <span class="module-nav-tab" data-action="switch-module" data-module="quote">💷 Quote</span>
+  </nav>
   <div class="spec-wrap">
 
     <div class="spec-section">
@@ -1349,6 +1398,13 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
       <span class="job-chip" id="quoteJobChip"></span>
     </div>
   </header>
+  <!-- Module nav -->
+  <nav class="module-nav">
+    <span class="module-nav-tab" data-action="switch-module" data-module="planner">🛁 Planner</span>
+    <span class="module-nav-tab" data-action="switch-module" data-module="presurvey">📋 Pre-Survey</span>
+    <span class="module-nav-tab" data-action="switch-module" data-module="installspec">🔧 Install Spec</span>
+    <span class="module-nav-tab active" data-action="switch-module" data-module="quote">💷 Quote</span>
+  </nav>
   <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:40px;text-align:center;position:relative;z-index:1;">
     <div style="font-size:48px;">💷</div>
     <h2 style="font-family:'Bricolage Grotesque',sans-serif;">Quote Builder</h2>
@@ -1451,7 +1507,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.0.13';
+const APP_VERSION = 'v2.0.14';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -1532,6 +1588,10 @@ function showPage(id, fromPop = false) {
   if (!fromPop) {
     try { history.pushState({ page: id }, ''); } catch(e) {}
   }
+  // Sync module nav active tab
+  document.querySelectorAll('[data-action="switch-module"]').forEach(t => {
+    t.classList.toggle('active', t.dataset.module === id);
+  });
   if (id === 'planner') {
     setTimeout(render, 50);
     updateRoomTabs();
@@ -1566,6 +1626,25 @@ function openModule(name) {
   loadJobDataIntoModules();
   showPage(name);
 }
+
+async function switchModule(name) {
+  if (!state.activeJob) { toast('No active job', 'warn'); return; }
+  if (name === state.currentPage) return;
+  // Auto-save current module before switching
+  try {
+    await saveCurrentModule();
+  } catch(e) {
+    // Non-blocking — proceed even if save fails
+  }
+  loadJobDataIntoModules();
+  showPage(name);
+}
+
+// Delegated handler for module nav tabs
+document.addEventListener('click', e => {
+  const tab = e.target.closest('[data-action="switch-module"]');
+  if (tab) switchModule(tab.dataset.module);
+});
 
 // ── AUTH CHECK ──
 function checkAuth() {
