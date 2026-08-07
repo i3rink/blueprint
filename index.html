@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.0.11 -->
+<!-- Blueprint (qb) v2.0.13 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -276,6 +276,20 @@ h1, h2, h3, .card-title { font-family: 'Bricolage Grotesque', sans-serif; }
 .search-result-customer { font-size: 13px; font-weight: 600; flex: 1; }
 .search-result-date { font-size: 11px; color: var(--muted); white-space: nowrap; }
 .search-hint { font-size: 13px; color: var(--muted); text-align: center; padding: 24px 0; }
+
+/* Doubler modal */
+.doubler-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+.doubler-option {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.doubler-option:hover { border-color: var(--teal); background: var(--teal-faint); }
+.doubler-option-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.doubler-option-desc { font-size: 13px; color: var(--muted); }
 
 /* Locked module tile */
 .module-tile.locked {
@@ -857,8 +871,8 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
       <button class="planner-btn warn" onclick="undoLastNote()">✎ Undo Note</button>
       <button class="planner-btn warn" onclick="deleteLast()">✕ Delete Last</button>
       <button class="planner-btn danger" onclick="clearAll()">Clear All</button>
-      <button class="planner-btn" onclick="exportPNG()">🖼 PNG</button>
-      <button class="planner-btn primary" onclick="exportPDF()">📄 PDF</button>
+      <button class="planner-btn" onclick="exportPNG()">🖼 Export to PNG</button>
+      <button class="planner-btn primary" onclick="exportPDF()">📄 Export to PDF</button>
       <button class="planner-btn primary" onclick="saveCurrentModule()">💾 Save</button>
     </div>
   </header>
@@ -1413,8 +1427,31 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
   </div>
 </div>
 
+<!-- ═══════════════════════════════════
+     MODAL: DOUBLER — SEPARATE INSTALL?
+═══════════════════════════════════ -->
+<div class="modal-overlay" id="doublerModal">
+  <div class="modal" style="max-width:460px;">
+    <h3>Adding a Room</h3>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">Is this room part of the same install, or a separate install at the same property?</p>
+    <div class="doubler-options">
+      <div class="doubler-option" data-action="doubler-same">
+        <div class="doubler-option-title">Same install</div>
+        <div class="doubler-option-desc">An additional room within job <span id="doubler-current-job"></span> — e.g. a bay or awkward layout requiring a second plan.</div>
+      </div>
+      <div class="doubler-option" data-action="doubler-new">
+        <div class="doubler-option-title">Separate install</div>
+        <div class="doubler-option-desc">A second bathroom at the same property — a new job ID will be created automatically.</div>
+      </div>
+    </div>
+    <div class="modal-btns" style="margin-top:8px;">
+      <button class="btn" onclick="closeDoublerModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
-const APP_VERSION = 'v2.0.11';
+const APP_VERSION = 'v2.0.13';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -2016,6 +2053,17 @@ document.addEventListener('click', e => {
 });
 
 function addRoom() {
+  if (!state.activeJob) { toast('Select a job first', 'warn'); return; }
+  // Show the doubler prompt every time a room is added
+  g('doubler-current-job').textContent = state.activeJob.job_id || '–';
+  g('doublerModal').classList.add('open');
+}
+
+function closeDoublerModal() { g('doublerModal').classList.remove('open'); }
+
+// User chose "same install" — add room to current job as normal
+function addRoomSameJob() {
+  closeDoublerModal();
   syncRoomFromPlanner();
   const name = 'Room ' + (roomPlans.length + 1);
   roomPlans.push({ name, rooms: [], items: [], notes: [] });
@@ -2028,6 +2076,71 @@ function addRoom() {
   render();
   openRenameModal(state.activeRoomIdx);
 }
+
+// User chose "separate install" — generate sibling job ID and create it
+async function addRoomNewJob() {
+  closeDoublerModal();
+  const baseId = state.activeJob.job_id || '';
+  const siblingId = generateSiblingJobId(baseId);
+  if (!siblingId) { toast('Could not generate sibling Job ID', 'error'); return; }
+  const now = new Date().toISOString();
+  const body = {
+    job_id: siblingId,
+    customer_id: state.activeJob.customer_id || null,
+    postcode: state.activeJob.postcode || null,
+    year: new Date().getFullYear(),
+    status: 'active',
+    room_plans: [{ name: 'Main Bathroom', rooms: [], items: [], notes: [] }],
+    pre_survey: { customer_name: state.activeJob.pre_survey?.customer_name || '' },
+    install_spec: {},
+    quote: {},
+    created_at: now,
+    updated_at: now,
+  };
+  try {
+    // Auto-save current job first
+    await saveCurrentModule();
+    const result = await sbPost('blueprint_jobs', body);
+    const created = Array.isArray(result) ? result[0] : result;
+    state.activeJob = created;
+    // Reset planner for fresh job
+    roomPlans = [{ name: 'Main Bathroom', rooms: [], items: [], notes: [] }];
+    state.activeRoomIdx = 0;
+    syncPlannerFromRoom();
+    updateRoomTabs();
+    updateJobStrip();
+    await loadJobs();
+    toast('New job ' + siblingId + ' created', 'success');
+    openRenameModal(0);
+  } catch(e) {
+    toast('Failed to create sibling job: ' + (e.message || 'error'), 'error');
+  }
+}
+
+// Generates next letter sibling: 1888 → 1888B, 1888B → 1888C, 1888C → 1888D etc.
+function generateSiblingJobId(jobId) {
+  if (!jobId) return null;
+  // Strip any trailing letter suffix to get the base
+  const match = jobId.match(/^(.*?)([A-Z]?)$/);
+  if (!match) return null;
+  const base = match[1];
+  const currentSuffix = match[2];
+  let nextSuffix;
+  if (!currentSuffix) {
+    nextSuffix = 'B'; // first sibling of a plain job
+  } else {
+    const code = currentSuffix.charCodeAt(0);
+    if (code >= 90) { toast('Maximum siblings reached (Z)', 'warn'); return null; } // Z limit
+    nextSuffix = String.fromCharCode(code + 1);
+  }
+  return base + nextSuffix;
+}
+
+// Delegated click handler for doubler modal options
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-action="doubler-same"]')) addRoomSameJob();
+  if (e.target.closest('[data-action="doubler-new"]'))  addRoomNewJob();
+});
 
 // Rename modal
 let renamingIdx = null;
