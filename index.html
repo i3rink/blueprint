@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.0.3 -->
+<!-- Blueprint (qb) v2.0.4 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -225,6 +225,57 @@ h1, h2, h3, .card-title { font-family: 'Bricolage Grotesque', sans-serif; }
   padding: 4px 10px;
 }
 .job-strip-status.no-job { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+
+/* ── Job search modal ── */
+.search-input-wrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+.search-input-wrap input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 14px;
+  padding: 10px 36px 10px 12px;
+  outline: none;
+  transition: border-color .15s;
+}
+.search-input-wrap input:focus { border-color: var(--teal); }
+.search-clear {
+  position: absolute;
+  right: 10px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  color: var(--muted); font-size: 16px;
+  cursor: pointer; padding: 0; line-height: 1;
+  display: none;
+}
+.search-results {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.search-result-row {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: border-color .15s, background .15s;
+}
+.search-result-row:hover { border-color: var(--teal-light); background: var(--teal-faint); }
+.search-result-job { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 14px; color: var(--teal); min-width: 60px; }
+.search-result-customer { font-size: 13px; font-weight: 600; flex: 1; }
+.search-result-date { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.search-hint { font-size: 13px; color: var(--muted); text-align: center; padding: 24px 0; }
 
 /* Locked module tile */
 .module-tile.locked {
@@ -746,6 +797,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
     </div>
     <div class="job-strip-actions">
       <span class="job-strip-status no-job" id="strip-status">No job selected</span>
+      <button class="btn btn-sm" onclick="openSearchJobModal()">🔍 Load Job</button>
       <button class="btn btn-primary btn-sm" onclick="openNewJobModal()">+ New Job</button>
       <button class="btn btn-sm" id="strip-clear-btn" style="display:none;" onclick="clearActiveJob()">✕ Clear</button>
     </div>
@@ -1330,6 +1382,25 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <!-- ═══════════════════════════════════
+     MODAL: SEARCH / LOAD JOB
+═══════════════════════════════════ -->
+<div class="modal-overlay" id="searchJobModal">
+  <div class="modal" style="max-width:520px;">
+    <h3>Load Job</h3>
+    <div class="search-input-wrap">
+      <input type="text" id="job-search-input" placeholder="Search by Job ID, Customer ID or name…" oninput="onJobSearchInput(this.value)">
+      <button class="search-clear" id="job-search-clear" onclick="clearJobSearch()">✕</button>
+    </div>
+    <div class="search-results" id="jobSearchResults">
+      <p class="search-hint">Start typing to search all jobs</p>
+    </div>
+    <div class="modal-btns" style="margin-top:16px;">
+      <button class="btn" onclick="closeSearchJobModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
      MODAL: RENAME ROOM
 ═══════════════════════════════════ -->
 <div class="modal-overlay" id="renameRoomModal">
@@ -1349,7 +1420,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.0.3';
+const APP_VERSION = 'v2.0.4';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -1557,6 +1628,93 @@ function clearActiveJob() {
   updateJobStrip();
   toast('Active job cleared');
 }
+
+// ── SEARCH / LOAD JOB MODAL ──
+let searchDebounceTimer = null;
+
+function openSearchJobModal() {
+  g('job-search-input').value = '';
+  g('job-search-clear').style.display = 'none';
+  g('jobSearchResults').innerHTML = '<p class="search-hint">Start typing to search all jobs</p>';
+  g('searchJobModal').classList.add('open');
+  setTimeout(() => g('job-search-input').focus(), 80);
+}
+
+function closeSearchJobModal() {
+  g('searchJobModal').classList.remove('open');
+}
+
+function clearJobSearch() {
+  g('job-search-input').value = '';
+  g('job-search-clear').style.display = 'none';
+  g('jobSearchResults').innerHTML = '<p class="search-hint">Start typing to search all jobs</p>';
+  g('job-search-input').focus();
+}
+
+function onJobSearchInput(val) {
+  g('job-search-clear').style.display = val ? '' : 'none';
+  clearTimeout(searchDebounceTimer);
+  if (!val.trim()) {
+    g('jobSearchResults').innerHTML = '<p class="search-hint">Start typing to search all jobs</p>';
+    return;
+  }
+  g('jobSearchResults').innerHTML = '<p class="search-hint">Searching…</p>';
+  searchDebounceTimer = setTimeout(() => runJobSearch(val.trim()), 300);
+}
+
+async function runJobSearch(q) {
+  try {
+    const enc = encodeURIComponent(q);
+    // Search job_id, customer_id, and customer name (stored in pre_survey->customer_name)
+    const qs = `or=(job_id.ilike.*${enc}*,customer_id.ilike.*${enc}*)&order=updated_at.desc&limit=30`;
+    const results = await sbGet('blueprint_jobs', qs);
+    renderSearchResults(results || [], q);
+  } catch(e) {
+    g('jobSearchResults').innerHTML = `<p class="search-hint">Search failed — ${esc(e.message || 'error')}</p>`;
+  }
+}
+
+function renderSearchResults(results, q) {
+  const el = g('jobSearchResults');
+  if (!results.length) {
+    el.innerHTML = '<p class="search-hint">No jobs found</p>';
+    return;
+  }
+  el.innerHTML = results.map(j => {
+    const name = j.pre_survey?.customer_name || '–';
+    const date = j.updated_at ? new Date(j.updated_at).toLocaleDateString('en-GB') : '';
+    return `<div class="search-result-row" data-action="search-load-job" data-id="${esc(j.id)}">
+      <span class="search-result-job">${esc(j.job_id || '–')}</span>
+      <span class="search-result-customer">${esc(name)} <span style="color:var(--muted);font-weight:400;font-size:12px;">${esc(j.customer_id || '')}</span></span>
+      <span class="search-result-date">${date}</span>
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('click', e => {
+  const row = e.target.closest('[data-action="search-load-job"]');
+  if (!row) return;
+  // Find job in already-loaded list first, otherwise fetch it
+  const cached = state.jobs.find(j => j.id === row.dataset.id);
+  if (cached) {
+    state.activeJob = cached;
+    updateJobStrip();
+    closeSearchJobModal();
+    toast('Job ' + cached.job_id + ' loaded', 'success');
+  } else {
+    sbGet('blueprint_jobs', `id=eq.${encodeURIComponent(row.dataset.id)}`)
+      .then(res => {
+        const job = Array.isArray(res) ? res[0] : res;
+        if (job) {
+          state.activeJob = job;
+          updateJobStrip();
+          closeSearchJobModal();
+          toast('Job ' + job.job_id + ' loaded', 'success');
+        }
+      })
+      .catch(() => toast('Could not load job', 'error'));
+  }
+});
 
 // ── NEW JOB MODAL ──
 function openNewJobModal() { g('newJobModal').classList.add('open'); }
