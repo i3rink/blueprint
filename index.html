@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.0.1 -->
+<!-- Blueprint (qb) v2.0.3 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -176,6 +176,61 @@ h1, h2, h3, .card-title { font-family: 'Bricolage Grotesque', sans-serif; }
   font-weight: 600;
   padding: 4px 10px;
   white-space: nowrap;
+}
+
+/* ── Job strip (persistent, always visible) ── */
+.job-strip {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 1px 0 rgba(0,0,0,.04);
+}
+.job-strip-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 140px;
+}
+.job-strip-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.job-strip-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: 'Bricolage Grotesque', sans-serif;
+}
+.job-strip-value.empty { color: var(--muted); font-weight: 400; font-size: 13px; }
+.job-strip-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.job-strip-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--teal-faint);
+  border: 1px solid var(--teal-light);
+  color: var(--teal-dark);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+}
+.job-strip-status.no-job { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+
+/* Locked module tile */
+.module-tile.locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* Module tiles */
@@ -671,41 +726,53 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
       <small id="header-user-name"></small>
     </div>
     <div class="home-actions">
-      <button class="btn btn-primary btn-sm" onclick="openNewJobModal()">+ New Job</button>
       <button class="btn btn-sm" onclick="loadJobs()">↺ Refresh</button>
     </div>
   </header>
 
-  <div class="home-body">
-    <!-- Active job banner -->
-    <div class="job-bar" id="activeJobBar" style="display:none;">
-      <span class="job-bar-label">Active job</span>
-      <span class="job-badge" id="activeJobBadge"></span>
-      <span style="font-size:14px;font-weight:600;flex:1;" id="activeJobCustomer"></span>
-      <button class="btn btn-sm" onclick="clearActiveJob()">✕ Clear</button>
+  <!-- Persistent job strip -->
+  <div class="job-strip" id="jobStrip">
+    <div class="job-strip-field">
+      <span class="job-strip-label">Customer ID</span>
+      <span class="job-strip-value empty" id="strip-customer-id">— No job loaded —</span>
     </div>
+    <div class="job-strip-field">
+      <span class="job-strip-label">Job ID</span>
+      <span class="job-strip-value empty" id="strip-job-id">—</span>
+    </div>
+    <div class="job-strip-field" style="min-width:200px;">
+      <span class="job-strip-label">Customer Name</span>
+      <span class="job-strip-value empty" id="strip-customer-name">—</span>
+    </div>
+    <div class="job-strip-actions">
+      <span class="job-strip-status no-job" id="strip-status">No job selected</span>
+      <button class="btn btn-primary btn-sm" onclick="openNewJobModal()">+ New Job</button>
+      <button class="btn btn-sm" id="strip-clear-btn" style="display:none;" onclick="clearActiveJob()">✕ Clear</button>
+    </div>
+  </div>
 
+  <div class="home-body">
     <p class="modules-heading">Modules</p>
     <div class="modules-grid">
-      <div class="module-tile" onclick="openModule('planner')">
+      <div class="module-tile locked" id="tile-planner" onclick="openModule('planner')">
         <div class="module-tile-icon">🛁</div>
         <div class="module-tile-name">Planner</div>
         <div class="module-tile-desc">Draw the room layout, place fixtures, and calculate panel quantities.</div>
         <div class="module-tile-tag">Room design</div>
       </div>
-      <div class="module-tile" onclick="openModule('presurvey')">
+      <div class="module-tile locked" id="tile-presurvey" onclick="openModule('presurvey')">
         <div class="module-tile-icon">📋</div>
         <div class="module-tile-name">Pre-Survey</div>
         <div class="module-tile-desc">Capture property details, heating system, current suite, and site notes.</div>
         <div class="module-tile-tag">Site capture</div>
       </div>
-      <div class="module-tile" onclick="openModule('installspec')">
+      <div class="module-tile locked" id="tile-installspec" onclick="openModule('installspec')">
         <div class="module-tile-icon">🔧</div>
         <div class="module-tile-name">Install Spec</div>
         <div class="module-tile-desc">Select the package, required works, uplifts and produce the fitter total.</div>
         <div class="module-tile-tag">Spec &amp; pricing</div>
       </div>
-      <div class="module-tile" onclick="openModule('quote')">
+      <div class="module-tile locked" id="tile-quote" onclick="openModule('quote')">
         <div class="module-tile-icon">💷</div>
         <div class="module-tile-name">Quote Builder</div>
         <div class="module-tile-desc">Configure the customer's selections and generate the quote PDF.</div>
@@ -1230,12 +1297,12 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
     <h3>New Job</h3>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Job ID</label>
-        <input type="text" id="nj-job-id" class="form-input" placeholder="e.g. 2141">
-      </div>
-      <div class="form-group">
         <label class="form-label">Customer ID</label>
         <input type="text" id="nj-customer-id" class="form-input" placeholder="e.g. 26-1234">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Job ID</label>
+        <input type="text" id="nj-job-id" class="form-input" placeholder="e.g. 2141">
       </div>
     </div>
     <div class="form-group">
@@ -1282,7 +1349,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.0.1';
+const APP_VERSION = 'v2.0.3';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -1356,7 +1423,7 @@ function showPage(id, fromPop = false) {
   if (id === 'presurvey') updateChip('presurvey');
   if (id === 'installspec') { updateChip('installspec'); buildCheckList('required-works-list', REQUIRED_WORKS, selectedRequired, null, 'req-count', 'req-uplift'); buildCheckList('plumbing-reposition-list', PLUMBING_REPOSITION, selectedPlumbing, null, 'plumb-count', 'plumb-uplift'); buildCheckList('joinery-list', JOINERY_ITEMS, selectedJoinery, null, 'joinery-count', 'joinery-uplift'); buildFixedList(); updateSpecTotals(); }
   if (id === 'quote') updateChip('quote');
-  if (id === 'home') { updateHomeJobBanner(); loadJobs(); }
+  if (id === 'home') { updateJobStrip(); loadJobs(); }
 }
 
 function updateChip(module) {
@@ -1439,29 +1506,55 @@ document.addEventListener('click', e => {
     const job = state.jobs.find(j => j.id === row.dataset.id);
     if (job) {
       state.activeJob = job;
-      updateHomeJobBanner();
+      updateJobStrip();
       toast('Job ' + job.job_id + ' loaded', 'success');
     }
   }
 });
 
 function updateHomeJobBanner() {
-  const bar = g('activeJobBar');
-  const badge = g('activeJobBadge');
-  const cust = g('activeJobCustomer');
-  if (state.activeJob) {
-    bar.style.display = '';
-    badge.textContent = 'Job ' + (state.activeJob.job_id || '–');
-    const name = state.activeJob.pre_survey?.customer_name || state.activeJob.customer_id || '–';
-    cust.textContent = name;
+  updateJobStrip();
+}
+
+function updateJobStrip() {
+  const hasJob = !!state.activeJob;
+  const cidEl   = g('strip-customer-id');
+  const jidEl   = g('strip-job-id');
+  const nameEl  = g('strip-customer-name');
+  const statEl  = g('strip-status');
+  const clearBtn = g('strip-clear-btn');
+  const tiles = ['tile-planner','tile-presurvey','tile-installspec','tile-quote'];
+
+  if (hasJob) {
+    const j = state.activeJob;
+    const name = j.pre_survey?.customer_name || '–';
+    cidEl.textContent  = j.customer_id || '–';
+    jidEl.textContent  = j.job_id || '–';
+    nameEl.textContent = name;
+    cidEl.classList.remove('empty');
+    jidEl.classList.remove('empty');
+    nameEl.classList.remove('empty');
+    statEl.textContent = j.status || 'draft';
+    statEl.className = 'job-strip-status';
+    clearBtn.style.display = '';
+    tiles.forEach(id => { const t = g(id); if (t) t.classList.remove('locked'); });
   } else {
-    bar.style.display = 'none';
+    cidEl.textContent  = '— No job loaded —';
+    jidEl.textContent  = '–';
+    nameEl.textContent = '–';
+    cidEl.classList.add('empty');
+    jidEl.classList.add('empty');
+    nameEl.classList.add('empty');
+    statEl.textContent = 'No job selected';
+    statEl.className = 'job-strip-status no-job';
+    clearBtn.style.display = 'none';
+    tiles.forEach(id => { const t = g(id); if (t) t.classList.add('locked'); });
   }
 }
 
 function clearActiveJob() {
   state.activeJob = null;
-  updateHomeJobBanner();
+  updateJobStrip();
   toast('Active job cleared');
 }
 
@@ -1475,6 +1568,28 @@ async function createNewJob() {
   const customerName = g('nj-customer-name').value.trim();
   const year = parseInt(g('nj-year').value) || new Date().getFullYear();
   const status = g('nj-status').value;
+
+  // ── TEST MODE BYPASS ──
+  // Entering "test" in all three fields unlocks modules without a Supabase call
+  if (customerId.toLowerCase() === 'test' && jobId.toLowerCase() === 'test' && customerName.toLowerCase() === 'test') {
+    state.activeJob = {
+      id: 'test',
+      job_id: 'TEST',
+      customer_id: 'TEST',
+      year: new Date().getFullYear(),
+      status: 'draft',
+      room_plans: [{ name: 'Main Bathroom', rooms: [], items: [], notes: [] }],
+      pre_survey: { customer_name: 'Test User' },
+      install_spec: {},
+      quote: {},
+    };
+    closeNewJobModal();
+    updateJobStrip();
+    resetPlannerForJob();
+    toast('Test mode — modules unlocked', 'warn');
+    return;
+  }
+
   if (!jobId) { toast('Job ID is required', 'error'); return; }
   const now = new Date().toISOString();
   const body = {
@@ -1495,7 +1610,7 @@ async function createNewJob() {
     state.activeJob = created;
     await loadJobs();
     closeNewJobModal();
-    updateHomeJobBanner();
+    updateJobStrip();
     // Reset room state
     resetPlannerForJob();
     toast('Job ' + jobId + ' created', 'success');
@@ -1507,6 +1622,7 @@ async function createNewJob() {
 // ── SAVE ──
 async function saveCurrentModule() {
   if (!state.activeJob) { toast('No active job', 'warn'); return; }
+  if (state.activeJob.id === 'test') { toast('Test mode — save skipped', 'warn'); return; }
   const now = new Date().toISOString();
   let patch = { updated_at: now };
 
