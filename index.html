@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.0.4 -->
+<!-- Blueprint (qb) v2.0.5 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1361,18 +1361,9 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
       <label class="form-label">Customer Name</label>
       <input type="text" id="nj-customer-name" class="form-input" placeholder="Full name">
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Year</label>
-        <input type="number" id="nj-year" class="form-input" value="2026">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Status</label>
-        <select id="nj-status" class="form-input">
-          <option value="draft">Draft</option>
-          <option value="active">Active</option>
-        </select>
-      </div>
+    <div class="form-group">
+      <label class="form-label">Year</label>
+      <input type="number" id="nj-year" class="form-input" value="2026">
     </div>
     <div class="modal-btns">
       <button class="btn" onclick="closeNewJobModal()">Cancel</button>
@@ -1420,7 +1411,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.0.4';
+const APP_VERSION = 'v2.0.5';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -1565,7 +1556,6 @@ function renderJobsList() {
     return `<div class="job-row" data-action="open-job" data-id="${esc(j.id)}">
       <span class="job-row-id">${esc(j.job_id || '–')}</span>
       <span class="job-row-customer">${esc(name)}</span>
-      <span class="job-row-status ${esc(j.status || 'draft')}">${esc(j.status || 'draft')}</span>
       <span class="job-row-date">${updDate}</span>
     </div>`;
   }).join('');
@@ -1605,7 +1595,7 @@ function updateJobStrip() {
     cidEl.classList.remove('empty');
     jidEl.classList.remove('empty');
     nameEl.classList.remove('empty');
-    statEl.textContent = j.status || 'draft';
+    statEl.textContent = 'Job ' + (j.job_id || '–');
     statEl.className = 'job-strip-status';
     clearBtn.style.display = '';
     tiles.forEach(id => { const t = g(id); if (t) t.classList.remove('locked'); });
@@ -1725,7 +1715,7 @@ async function createNewJob() {
   const customerId = g('nj-customer-id').value.trim();
   const customerName = g('nj-customer-name').value.trim();
   const year = parseInt(g('nj-year').value) || new Date().getFullYear();
-  const status = g('nj-status').value;
+  const status = 'active';
 
   // ── TEST MODE BYPASS ──
   // Entering "test" in all three fields unlocks modules without a Supabase call
