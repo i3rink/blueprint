@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.0.9 -->
+<!-- Blueprint (qb) v2.0.10 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -785,16 +785,16 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
   <!-- Persistent job strip -->
   <div class="job-strip" id="jobStrip">
     <div class="job-strip-field">
-      <span class="job-strip-label">Postcode</span>
-      <span class="job-strip-value empty" id="strip-postcode">—</span>
-    </div>
-    <div class="job-strip-field">
       <span class="job-strip-label">Job ID</span>
       <span class="job-strip-value empty" id="strip-job-id">— No job loaded —</span>
     </div>
     <div class="job-strip-field" style="min-width:200px;">
       <span class="job-strip-label">Customer Name</span>
       <span class="job-strip-value empty" id="strip-customer-name">—</span>
+    </div>
+    <div class="job-strip-field">
+      <span class="job-strip-label">Postcode</span>
+      <span class="job-strip-value empty" id="strip-postcode">—</span>
     </div>
     <div class="job-strip-actions">
       <span class="job-strip-status no-job" id="strip-status">No job selected</span>
@@ -1414,7 +1414,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.0.9';
+const APP_VERSION = 'v2.0.10';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -1767,6 +1767,7 @@ async function createNewJob() {
     job_id: jobId,
     customer_id: customerId || null,
     postcode: postcode || null,
+    year: new Date().getFullYear(),
     status,
     room_plans: [{ name: 'Main Bathroom', rooms: [], items: [], notes: [] }],
     pre_survey: { customer_name: customerName },
