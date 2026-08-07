@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.0.5 -->
+<!-- Blueprint (qb) v2.0.6 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -784,12 +784,12 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
   <!-- Persistent job strip -->
   <div class="job-strip" id="jobStrip">
     <div class="job-strip-field">
-      <span class="job-strip-label">Customer ID</span>
-      <span class="job-strip-value empty" id="strip-customer-id">— No job loaded —</span>
+      <span class="job-strip-label">Postcode</span>
+      <span class="job-strip-value empty" id="strip-postcode">—</span>
     </div>
     <div class="job-strip-field">
       <span class="job-strip-label">Job ID</span>
-      <span class="job-strip-value empty" id="strip-job-id">—</span>
+      <span class="job-strip-value empty" id="strip-job-id">— No job loaded —</span>
     </div>
     <div class="job-strip-field" style="min-width:200px;">
       <span class="job-strip-label">Customer Name</span>
@@ -1347,23 +1347,17 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 <div class="modal-overlay" id="newJobModal">
   <div class="modal">
     <h3>New Job</h3>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Customer ID</label>
-        <input type="text" id="nj-customer-id" class="form-input" placeholder="e.g. 26-1234">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Job ID</label>
-        <input type="text" id="nj-job-id" class="form-input" placeholder="e.g. 2141">
-      </div>
+    <div class="form-group">
+      <label class="form-label">Job ID</label>
+      <input type="text" id="nj-job-id" class="form-input" placeholder="e.g. 2141">
     </div>
     <div class="form-group">
       <label class="form-label">Customer Name</label>
       <input type="text" id="nj-customer-name" class="form-input" placeholder="Full name">
     </div>
     <div class="form-group">
-      <label class="form-label">Year</label>
-      <input type="number" id="nj-year" class="form-input" value="2026">
+      <label class="form-label">Postcode</label>
+      <input type="text" id="nj-postcode" class="form-input" placeholder="e.g. KA9 1TN" oninput="normalisePostcode(this)">
     </div>
     <div class="modal-btns">
       <button class="btn" onclick="closeNewJobModal()">Cancel</button>
@@ -1411,7 +1405,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.0.5';
+const APP_VERSION = 'v2.0.6';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -1444,6 +1438,21 @@ const sbPatch = (p, qs, body)  => sb(SUPABASE_URL, SUPABASE_KEY, `${p}?${qs}`, {
 function g(id) { return document.getElementById(id); }
 function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ── POSTCODE NORMALISATION ──
+// Strips spaces, uppercases, inserts space before final 3 chars
+// e.g. ka91tn → KA9 1TN, KA91TN → KA9 1TN, Ka9 1tn → KA9 1TN
+function normalisePostcodeValue(val) {
+  if (!val) return '';
+  const raw = val.toUpperCase().replace(/\s+/g, '');
+  if (raw.length > 3) return raw.slice(0, raw.length - 3) + ' ' + raw.slice(-3);
+  return raw;
+}
+function normalisePostcode(input) {
+  const pos = input.selectionStart;
+  input.value = normalisePostcodeValue(input.value);
+  try { input.setSelectionRange(pos, pos); } catch(e) {}
 }
 function toast(msg, type = '') {
   const el = g('toast');
@@ -1579,33 +1588,31 @@ function updateHomeJobBanner() {
 
 function updateJobStrip() {
   const hasJob = !!state.activeJob;
-  const cidEl   = g('strip-customer-id');
-  const jidEl   = g('strip-job-id');
-  const nameEl  = g('strip-customer-name');
-  const statEl  = g('strip-status');
+  const statEl   = g('strip-status');
   const clearBtn = g('strip-clear-btn');
   const tiles = ['tile-planner','tile-presurvey','tile-installspec','tile-quote'];
 
   if (hasJob) {
     const j = state.activeJob;
     const name = j.pre_survey?.customer_name || '–';
-    cidEl.textContent  = j.customer_id || '–';
-    jidEl.textContent  = j.job_id || '–';
-    nameEl.textContent = name;
-    cidEl.classList.remove('empty');
-    jidEl.classList.remove('empty');
-    nameEl.classList.remove('empty');
+    const pc = j.postcode || '–';
+    g('strip-job-id').textContent   = j.job_id || '–';
+    g('strip-postcode').textContent = pc;
+    g('strip-customer-name').textContent = name;
+    g('strip-job-id').classList.remove('empty');
+    g('strip-postcode').classList.remove('empty');
+    g('strip-customer-name').classList.remove('empty');
     statEl.textContent = 'Job ' + (j.job_id || '–');
     statEl.className = 'job-strip-status';
     clearBtn.style.display = '';
     tiles.forEach(id => { const t = g(id); if (t) t.classList.remove('locked'); });
   } else {
-    cidEl.textContent  = '— No job loaded —';
-    jidEl.textContent  = '–';
-    nameEl.textContent = '–';
-    cidEl.classList.add('empty');
-    jidEl.classList.add('empty');
-    nameEl.classList.add('empty');
+    g('strip-job-id').textContent   = '— No job loaded —';
+    g('strip-postcode').textContent = '–';
+    g('strip-customer-name').textContent = '–';
+    g('strip-job-id').classList.add('empty');
+    g('strip-postcode').classList.add('empty');
+    g('strip-customer-name').classList.add('empty');
     statEl.textContent = 'No job selected';
     statEl.className = 'job-strip-status no-job';
     clearBtn.style.display = 'none';
@@ -1712,20 +1719,20 @@ function closeNewJobModal() { g('newJobModal').classList.remove('open'); }
 
 async function createNewJob() {
   const jobId = g('nj-job-id').value.trim();
-  const customerId = g('nj-customer-id').value.trim();
   const customerName = g('nj-customer-name').value.trim();
-  const year = parseInt(g('nj-year').value) || new Date().getFullYear();
+  const postcode = normalisePostcodeValue(g('nj-postcode').value);
   const status = 'active';
 
   // ── TEST MODE BYPASS ──
   // Entering "test" in all three fields unlocks modules without a Supabase call
-  if (customerId.toLowerCase() === 'test' && jobId.toLowerCase() === 'test' && customerName.toLowerCase() === 'test') {
+  if (jobId.toLowerCase() === 'test' && customerName.toLowerCase() === 'test' && postcode.toLowerCase() === 'test') {
     state.activeJob = {
       id: 'test',
       job_id: 'TEST',
-      customer_id: 'TEST',
+      customer_id: null,
+      postcode: 'TEST',
       year: new Date().getFullYear(),
-      status: 'draft',
+      status: 'active',
       room_plans: [{ name: 'Main Bathroom', rooms: [], items: [], notes: [] }],
       pre_survey: { customer_name: 'Test User' },
       install_spec: {},
@@ -1742,11 +1749,10 @@ async function createNewJob() {
   const now = new Date().toISOString();
   const body = {
     job_id: jobId,
-    customer_id: customerId || null,
-    year,
+    postcode: postcode || null,
     status,
     room_plans: [{ name: 'Main Bathroom', rooms: [], items: [], notes: [] }],
-    pre_survey: { customer_name: customerName || customerId },
+    pre_survey: { customer_name: customerName },
     install_spec: {},
     quote: {},
     created_at: now,
