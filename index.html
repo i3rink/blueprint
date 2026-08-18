@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.1.1 -->
+<!-- Blueprint (qb) v2.1.2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -225,6 +225,11 @@ h1, h2, h3, .card-title { font-family: 'Bricolage Grotesque', sans-serif; }
   padding: 4px 10px;
 }
 .job-strip-status.no-job { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+@media (max-width: 640px) {
+  .job-strip { padding: 10px 16px; gap: 10px; }
+  .job-strip-field { min-width: 0; }
+  .job-strip-actions { margin-left: 0; width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+}
 
 /* ── Job search modal ── */
 .search-input-wrap {
@@ -480,6 +485,8 @@ h1, h2, h3, .card-title { font-family: 'Bricolage Grotesque', sans-serif; }
   padding: 28px;
   width: 100%;
   max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: var(--shadow-lg);
 }
 .modal h3 {
@@ -1141,15 +1148,15 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 
   <!-- Persistent job strip -->
   <div class="job-strip" id="jobStrip">
-    <div class="job-strip-field">
+    <div class="job-strip-field" id="strip-field-jobid">
       <span class="job-strip-label">Job ID</span>
       <span class="job-strip-value empty" id="strip-job-id">— No job loaded —</span>
     </div>
-    <div class="job-strip-field" style="min-width:200px;">
+    <div class="job-strip-field" id="strip-field-name" style="min-width:200px;">
       <span class="job-strip-label">Customer Name</span>
       <span class="job-strip-value empty" id="strip-customer-name">—</span>
     </div>
-    <div class="job-strip-field">
+    <div class="job-strip-field" id="strip-field-postcode">
       <span class="job-strip-label">Postcode</span>
       <span class="job-strip-value empty" id="strip-postcode">—</span>
     </div>
@@ -1933,7 +1940,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.1.1';
+const APP_VERSION = 'v2.1.2';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -2174,6 +2181,11 @@ function updateJobStrip() {
   const statEl   = g('strip-status');
   const clearBtn = g('strip-clear-btn');
   const tiles = ['tile-planner','tile-presurvey','tile-installspec','tile-quote'];
+  const isMobile = window.innerWidth <= 640;
+  ['strip-field-jobid','strip-field-name','strip-field-postcode'].forEach(id => {
+    const el = g(id);
+    if (el) el.style.display = (isMobile && !hasJob) ? 'none' : '';
+  });
 
   if (hasJob) {
     const j = state.activeJob;
