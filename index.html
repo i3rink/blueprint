@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.1.0 -->
+<!-- Blueprint (qb) v2.1.1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1016,7 +1016,7 @@ h1, h2, h3, .card-title { font-family: 'Bricolage Grotesque', sans-serif; }
   .planner-bottom { padding: 6px 12px; justify-content: flex-end; }
   .canvas-wrap { width: 100%; }
 }
-@media (max-width: 900px) and (orientation: portrait) { .portrait-warning { display: flex; } }
+/* Portrait warning shown via JS only when on planner page */
 @media (min-width: 901px) { .planner-sidebar { transform: none !important; position: relative; } .sidebar-backdrop { display: none !important; } }
 
 /* ═══════════════════════════════════
@@ -1933,7 +1933,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.1.0';
+const APP_VERSION = 'v2.1.1';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -2023,11 +2023,22 @@ function showPage(id, fromPop = false) {
     updateRoomTabs();
     updatePlannerChip();
   }
+  checkPlannerOrientation();
   if (id === 'presurvey') updateChip('presurvey');
   if (id === 'installspec') { updateChip('installspec'); buildCheckList('required-works-list', REQUIRED_WORKS, selectedRequired, null, 'req-count', 'req-uplift'); buildCheckList('plumbing-reposition-list', PLUMBING_REPOSITION, selectedPlumbing, null, 'plumb-count', 'plumb-uplift'); buildCheckList('joinery-list', JOINERY_ITEMS, selectedJoinery, null, 'joinery-count', 'joinery-uplift'); buildFixedList(); updateSpecTotals(); }
   if (id === 'quote') updateChip('quote');
   if (id === 'home') { updateJobStrip(); loadJobs(); }
 }
+
+function checkPlannerOrientation() {
+  const warning = g('portraitWarning');
+  if (!warning) return;
+  const onPlanner = state.currentPage === 'planner';
+  const isNarrowPortrait = window.innerWidth <= 900 && window.innerHeight > window.innerWidth;
+  warning.style.display = (onPlanner && isNarrowPortrait) ? 'flex' : 'none';
+}
+
+window.addEventListener('resize', checkPlannerOrientation);
 
 function updateChip(module) {
   const el = g(module + 'JobChip');
