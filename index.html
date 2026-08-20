@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.1.8 -->
+<!-- Blueprint (qb) v2.1.9 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1951,7 +1951,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.1.8';
+const APP_VERSION = 'v2.1.9';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -2001,11 +2001,9 @@ async function uploadPlanImage(jobId, imgData) {
       body: blob,
     }
   );
-  const uploadStatus = uploadRes.status;
-  const uploadBody = await uploadRes.text();
-  console.log('[Blueprint] Storage upload status:', uploadStatus, 'body:', uploadBody);
   if (!uploadRes.ok) {
-    throw new Error(`Storage upload failed ${uploadStatus}: ${uploadBody}`);
+    const err = await uploadRes.json().catch(() => ({}));
+    throw new Error(err.error || `Storage upload failed ${uploadRes.status}`);
   }
   return `${SUPABASE_URL}/storage/v1/object/public/blueprint-plans/${path}`;
 }
