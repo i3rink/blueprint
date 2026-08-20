@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.1.7 -->
+<!-- Blueprint (qb) v2.1.8 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1951,7 +1951,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.1.7';
+const APP_VERSION = 'v2.1.8';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -1981,9 +1981,12 @@ const sbPost  = (p, body)      => sb(SUPABASE_URL, SUPABASE_KEY, p, { method:'PO
 const sbPatch = (p, qs, body)  => sb(SUPABASE_URL, SUPABASE_KEY, `${p}?${qs}`, { method:'PATCH', body:JSON.stringify(body), prefer:'return=representation' });
 
 async function uploadPlanImage(jobId, imgData) {
-  // Convert data URI to blob
-  const res = await fetch(imgData);
-  const blob = await res.blob();
+  // Convert data URI to blob without fetch (data: URI fetch unreliable in some browsers)
+  const base64 = imgData.split(',')[1];
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const blob = new Blob([bytes], { type: 'image/jpeg' });
   const path = `${jobId}/plan.jpg`;
   const uploadRes = await fetch(
     `${SUPABASE_URL}/storage/v1/object/blueprint-plans/${path}`,
