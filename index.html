@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.1.5 -->
+<!-- Blueprint (qb) v2.1.6 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1951,7 +1951,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.1.5';
+const APP_VERSION = 'v2.1.6';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -1979,6 +1979,31 @@ async function sb(url, key, path, opts = {}) {
 const sbGet   = (p, qs = '')   => sb(SUPABASE_URL, SUPABASE_KEY, `${p}?${qs}`);
 const sbPost  = (p, body)      => sb(SUPABASE_URL, SUPABASE_KEY, p, { method:'POST', body:JSON.stringify(body), prefer:'return=representation' });
 const sbPatch = (p, qs, body)  => sb(SUPABASE_URL, SUPABASE_KEY, `${p}?${qs}`, { method:'PATCH', body:JSON.stringify(body), prefer:'return=representation' });
+
+async function uploadPlanImage(jobId, imgData) {
+  // Convert data URI to blob
+  const res = await fetch(imgData);
+  const blob = await res.blob();
+  const path = `${jobId}/plan.jpg`;
+  const uploadRes = await fetch(
+    `${SUPABASE_URL}/storage/v1/object/blueprint-plans/${path}`,
+    {
+      method: 'PUT',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'image/jpeg',
+        'x-upsert': 'true',
+      },
+      body: blob,
+    }
+  );
+  if (!uploadRes.ok) {
+    const err = await uploadRes.json().catch(() => ({}));
+    throw new Error(err.error || `Storage upload failed ${uploadRes.status}`);
+  }
+  return `${SUPABASE_URL}/storage/v1/object/public/blueprint-plans/${path}`;
+}
 
 // ── DOM HELPER & UTILITIES ──
 function g(id) { return document.getElementById(id); }
@@ -2409,6 +2434,27 @@ async function saveCurrentModule() {
 
   const isFirstSave = !state.activeJob.survey_html;
   patch.survey_html = buildSurveyHtml().replace(/src="data:[^"]+"/g,'src=""');
+
+  // Capture plan image and upload to Storage
+  try {
+    let minX=COLS,minY=ROWS,maxX=0,maxY=0;
+    rooms.forEach(r=>{minX=Math.min(minX,r.x);minY=Math.min(minY,r.y);maxX=Math.max(maxX,r.x+r.w);maxY=Math.max(maxY,r.y+r.h);});
+    items.forEach(it=>{minX=Math.min(minX,it.x);minY=Math.min(minY,it.y);maxX=Math.max(maxX,it.x+it.w);maxY=Math.max(maxY,it.y+it.h);});
+    if(!rooms.length){minX=0;minY=0;maxX=COLS;maxY=ROWS;}
+    const pad=12;minX=Math.max(0,minX-pad);minY=Math.max(0,minY-pad);maxX=Math.min(COLS,maxX+pad);maxY=Math.min(ROWS,maxY+pad);
+    const SCALE=4;
+    const srcCropX=minX*CELL,srcCropY=minY*CELL,srcCropW=(maxX-minX)*CELL,srcCropH=(maxY-minY)*CELL;
+    const offscreen=document.createElement('canvas');offscreen.width=canvas.width;offscreen.height=canvas.height;
+    const offCtx=offscreen.getContext('2d');const savedCtx=ctx;ctx=offCtx;render();ctx=savedCtx;
+    const scaled=document.createElement('canvas');scaled.width=srcCropW*SCALE;scaled.height=srcCropH*SCALE;
+    scaled.getContext('2d').drawImage(offscreen,srcCropX,srcCropY,srcCropW,srcCropH,0,0,scaled.width,scaled.height);
+    const imgData=scaled.toDataURL('image/jpeg',0.92);
+    patch.plan_image_url = await uploadPlanImage(state.activeJob.job_id, imgData);
+  } catch(e) {
+    console.warn('Plan image upload failed:', e);
+    // Non-fatal — continue with save, plan_image_url just won't update
+  }
+
   try {
     const updated = await sbPatch('blueprint_jobs', `id=eq.${state.activeJob.id}`, patch);
     const r = Array.isArray(updated) ? updated[0] : updated;
