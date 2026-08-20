@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.1.6 -->
+<!-- Blueprint (qb) v2.1.7 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1951,7 +1951,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.1.6';
+const APP_VERSION = 'v2.1.7';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -1998,9 +1998,11 @@ async function uploadPlanImage(jobId, imgData) {
       body: blob,
     }
   );
+  const uploadStatus = uploadRes.status;
+  const uploadBody = await uploadRes.text();
+  console.log('[Blueprint] Storage upload status:', uploadStatus, 'body:', uploadBody);
   if (!uploadRes.ok) {
-    const err = await uploadRes.json().catch(() => ({}));
-    throw new Error(err.error || `Storage upload failed ${uploadRes.status}`);
+    throw new Error(`Storage upload failed ${uploadStatus}: ${uploadBody}`);
   }
   return `${SUPABASE_URL}/storage/v1/object/public/blueprint-plans/${path}`;
 }
@@ -2451,7 +2453,7 @@ async function saveCurrentModule() {
     const imgData=scaled.toDataURL('image/jpeg',0.92);
     patch.plan_image_url = await uploadPlanImage(state.activeJob.job_id, imgData);
   } catch(e) {
-    console.warn('Plan image upload failed:', e);
+    console.error('[Blueprint] Plan image upload failed:', e.message);
     // Non-fatal — continue with save, plan_image_url just won't update
   }
 
