@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.2.0 -->
+<!-- Blueprint (qb) v2.2.1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1166,11 +1166,16 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
       <span class="job-strip-label">Postcode</span>
       <span class="job-strip-value empty" id="strip-postcode">—</span>
     </div>
+    <div class="job-strip-field" id="strip-field-address" style="min-width:200px;">
+      <span class="job-strip-label">Address</span>
+      <span class="job-strip-value empty" id="strip-address">—</span>
+    </div>
     <div class="job-strip-actions">
       <span class="job-strip-status no-job" id="strip-status">No job selected</span>
-      <button class="btn btn-sm" onclick="openSearchJobModal()">🔍 Load Job</button>
+      <button class="btn btn-sm" id="strip-edit-btn" style="display:none;" onclick="openEditJobModal()">&#9998; Edit</button>
+      <button class="btn btn-sm" onclick="openSearchJobModal()">&#128269; Load Job</button>
       <button class="btn btn-primary btn-sm" onclick="openNewJobModal()">+ New Job</button>
-      <button class="btn btn-sm" id="strip-clear-btn" style="display:none;" onclick="clearActiveJob()">✕ Clear</button>
+      <button class="btn btn-sm" id="strip-clear-btn" style="display:none;" onclick="clearActiveJob()">&#10005; Clear</button>
     </div>
   </div>
 
@@ -1895,6 +1900,27 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <!-- ═══════════════════════════════════
+     MODAL: EDIT JOB DETAILS
+═══════════════════════════════════ -->
+<div class="modal-overlay" id="editJobModal">
+  <div class="modal" style="max-width:420px;">
+    <h3>Edit Job Details</h3>
+    <div class="form-group">
+      <label class="form-label">Address</label>
+      <input type="text" id="ej-address" class="form-input" placeholder="e.g. 14 High Street, Kilmarnock">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Postcode</label>
+      <input type="text" id="ej-postcode" class="form-input" placeholder="e.g. KA11 4HR" onblur="normalisePostcode(this)">
+    </div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeEditJobModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditJobDetails()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
      MODAL: SEARCH / LOAD JOB
 ═══════════════════════════════════ -->
 <div class="modal-overlay" id="searchJobModal">
@@ -1956,7 +1982,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.2.0';
+const APP_VERSION = 'v2.2.1';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -2224,9 +2250,10 @@ function updateJobStrip() {
   const hasJob = !!state.activeJob;
   const statEl   = g('strip-status');
   const clearBtn = g('strip-clear-btn');
+  const editBtn  = g('strip-edit-btn');
   const tiles = ['tile-planner','tile-presurvey','tile-installspec','tile-quote'];
   const isMobile = window.innerWidth <= 640;
-  ['strip-field-jobid','strip-field-name','strip-field-postcode'].forEach(id => {
+  ['strip-field-jobid','strip-field-name','strip-field-postcode','strip-field-address'].forEach(id => {
     const el = g(id);
     if (el) el.style.display = (isMobile && !hasJob) ? 'none' : '';
   });
@@ -2235,26 +2262,33 @@ function updateJobStrip() {
     const j = state.activeJob;
     const name = j.pre_survey?.customer_name || '–';
     const pc = j.postcode || '–';
-    g('strip-job-id').textContent   = j.job_id || '–';
-    g('strip-postcode').textContent = pc;
+    const addr = j.address || '–';
+    g('strip-job-id').textContent        = j.job_id || '–';
+    g('strip-postcode').textContent      = pc;
     g('strip-customer-name').textContent = name;
+    g('strip-address').textContent       = addr;
     g('strip-job-id').classList.remove('empty');
     g('strip-postcode').classList.remove('empty');
     g('strip-customer-name').classList.remove('empty');
+    addr === '–' ? g('strip-address').classList.add('empty') : g('strip-address').classList.remove('empty');
     statEl.textContent = 'Job ' + (j.job_id || '–');
     statEl.className = 'job-strip-status';
     clearBtn.style.display = '';
+    editBtn.style.display  = '';
     tiles.forEach(id => { const t = g(id); if (t) t.classList.remove('locked'); });
   } else {
-    g('strip-job-id').textContent   = '— No job loaded —';
-    g('strip-postcode').textContent = '–';
+    g('strip-job-id').textContent        = '— No job loaded —';
+    g('strip-postcode').textContent      = '–';
     g('strip-customer-name').textContent = '–';
+    g('strip-address').textContent       = '–';
     g('strip-job-id').classList.add('empty');
     g('strip-postcode').classList.add('empty');
     g('strip-customer-name').classList.add('empty');
+    g('strip-address').classList.add('empty');
     statEl.textContent = 'No job selected';
     statEl.className = 'job-strip-status no-job';
     clearBtn.style.display = 'none';
+    editBtn.style.display  = 'none';
     tiles.forEach(id => { const t = g(id); if (t) t.classList.add('locked'); });
   }
 }
@@ -2361,6 +2395,42 @@ function closeNewJobModal() {
   g('nj-postcode').value = '';
   g('nj-customer-name').value = '';
   g('nj-address').value = '';
+}
+
+// ── EDIT JOB DETAILS MODAL ──
+function openEditJobModal() {
+  if (!state.activeJob) return;
+  g('ej-address').value = state.activeJob.address || '';
+  g('ej-postcode').value = state.activeJob.postcode || '';
+  g('editJobModal').classList.add('open');
+}
+
+function closeEditJobModal() {
+  g('editJobModal').classList.remove('open');
+  g('ej-address').value = '';
+  g('ej-postcode').value = '';
+}
+
+async function saveEditJobDetails() {
+  if (!state.activeJob) return;
+  if (state.activeJob.id === 'test') { toast('Test mode — save skipped', 'warn'); closeEditJobModal(); return; }
+  const address  = g('ej-address').value.trim();
+  const postcode = normalisePostcodeValue(g('ej-postcode').value);
+  try {
+    const updated = await sbPatch('blueprint_jobs', `id=eq.${state.activeJob.id}`, {
+      address:    address  || null,
+      postcode:   postcode || null,
+      updated_at: new Date().toISOString(),
+    });
+    const r = Array.isArray(updated) ? updated[0] : updated;
+    if (r) state.activeJob = { ...state.activeJob, ...r };
+    else { state.activeJob.address = address || null; state.activeJob.postcode = postcode || null; }
+    updateJobStrip();
+    closeEditJobModal();
+    toast('Job details updated', 'success');
+  } catch(e) {
+    toast('Save failed: ' + (e.message || 'error'), 'error');
+  }
 }
 
 async function createNewJob() {
