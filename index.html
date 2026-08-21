@@ -1,4 +1,4 @@
-<!-- Blueprint (qb) v2.2.1 -->
+<!-- Blueprint (qb) v2.2.2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1982,7 +1982,7 @@ textarea.spec-input { resize: vertical; min-height: 70px; font-size: 12px; }
 </div>
 
 <script>
-const APP_VERSION = 'v2.2.1';
+const APP_VERSION = 'v2.2.2';
 
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://yfijllqkgzgubvtefxhz.supabase.co';
@@ -2425,6 +2425,9 @@ async function saveEditJobDetails() {
     const r = Array.isArray(updated) ? updated[0] : updated;
     if (r) state.activeJob = { ...state.activeJob, ...r };
     else { state.activeJob.address = address || null; state.activeJob.postcode = postcode || null; }
+    // Keep state.jobs in sync so reloading from the recent list reflects the update
+    const idx = state.jobs.findIndex(j => j.id === state.activeJob.id);
+    if (idx !== -1) state.jobs[idx] = { ...state.jobs[idx], ...state.activeJob };
     updateJobStrip();
     closeEditJobModal();
     toast('Job details updated', 'success');
